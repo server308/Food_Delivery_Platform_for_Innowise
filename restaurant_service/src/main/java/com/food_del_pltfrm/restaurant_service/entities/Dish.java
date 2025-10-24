@@ -6,16 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "restaurants")
-public class Restaurant {
+@Table(name = "dishes")
+public class Dish {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -25,13 +24,15 @@ public class Restaurant {
     private String name;
 
     @Column(nullable = false)
-    private String cuisine;
+    private String description;
 
     @Column(nullable = false)
-    private String address;
+    private Integer price;
 
-    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Dish> dishes;
+    @Column(nullable = false)
+    private String imageUrl;
 
-
+    @ManyToOne
+    @JoinColumn(name = "restaurant_id", nullable = false)
+    private Restaurant restaurant;
 }
