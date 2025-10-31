@@ -5,6 +5,10 @@ import com.food_del_pltfrm.user_service.entities.User;
 import com.food_del_pltfrm.user_service.repositories.UserRepository;
 import com.food_del_pltfrm.user_service.services.interfaces.UserService;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,6 +17,9 @@ import java.util.ArrayList;
 
 @Service
 @Slf4j
+@Getter
+@Setter
+@AllArgsConstructor
 @Transactional
 public class UserServiceImpl implements UserService {
 
@@ -20,11 +27,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     // Инъекция через конструктор (рекомендуется)
-    public UserServiceImpl(UserRepository userRepository,
-                           PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+
 
     @Override
     public User createUser(SignUpRequest signUpRequest) {
@@ -49,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
+        return userRepository.findByFullName(username)
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
     }
 
@@ -67,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean existsByUsername(String username) {
-        return userRepository.existsByUsername(username);
+        return userRepository.existsByFullName(username);
     }
 
     @Override
@@ -78,5 +81,5 @@ public class UserServiceImpl implements UserService {
     @Override
     public void saveUser(User user) {
         userRepository.save(user);
-    }*/
+    }
 }

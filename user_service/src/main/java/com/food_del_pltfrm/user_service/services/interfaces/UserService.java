@@ -5,10 +5,10 @@ import com.food_del_pltfrm.user_service.entities.User;
 
 public interface UserService {
     User createUser(SignUpRequest signUpRequest);
-    User findByUsername(String username);
+    User findByUsername(String fullName);
     User findByEmail(String email);
     User findById(Long id);
-    boolean existsByUsername(String username);
+    boolean existsByUsername(String fullName);
     boolean existsByEmail(String email);
     void saveUser(User user);
 }
