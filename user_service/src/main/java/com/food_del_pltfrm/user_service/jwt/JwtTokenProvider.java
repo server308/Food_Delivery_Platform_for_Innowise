@@ -3,6 +3,7 @@ package com.food_del_pltfrm.user_service.jwt;
 import com.food_del_pltfrm.user_service.entities.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -20,6 +22,7 @@ public class JwtTokenProvider {
     private String accessKey;
     private String secretKey;
 
+    @Autowired
     public JwtTokenProvider(@Value("${jwt.secret.access}") String accessKey, @Value("${jwt.secret.refresh}") String secretKey) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -39,9 +42,9 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateAccessToken(String fullName, Role role){
+    public String generateAccessToken(String fullName, List<Role> roles){
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role.toString());
+        claims.put("roles", roles.toString());
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
                 .setSubject(fullName) // Устанавливаем subject
