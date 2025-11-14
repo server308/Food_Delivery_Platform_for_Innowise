@@ -24,9 +24,10 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
     @Bean
-    public JwtAuthFilter jwtAuthFilter(@Autowired JwtTokenProvider jwtTokenProvider, @Autowired UserService userService) {
+    public JwtAuthFilter jwtAuthFilter(JwtTokenProvider jwtTokenProvider, UserService userService) {
         return new JwtAuthFilter(jwtTokenProvider, userService);
     }
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
@@ -36,7 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/users/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
