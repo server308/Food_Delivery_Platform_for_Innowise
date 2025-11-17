@@ -35,12 +35,12 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateRefreshToken(String fullName){
+    public String generateRefreshToken(String email){
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "refresh");
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(fullName) // Устанавливаем subject
+                .setSubject(email) // Устанавливаем subject
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия токена (30 дней)
                 .signWith(refreshSecretKey)
@@ -48,13 +48,13 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateAccessToken(String fullName, List<Role> roles){
+    public String generateAccessToken(String email, List<String> roles){
         Map<String, Object> claims = new HashMap<>();
-        List<String> roles_string = roles.stream().map(role -> role.getName()).toList();
-        claims.put("roles", roles_string);
+        //List<String> roles_string = roles.stream().map(role -> role.getName()).toList();
+        claims.put("roles", roles);
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(fullName) // Устанавливаем subject
+                .setSubject(email) // Устанавливаем subject
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия access-токена (5 минут)
                 .signWith(accessSecretKey)
@@ -88,7 +88,7 @@ public class JwtTokenProvider {
         return claims;
     }
 
-    public String getFullNameFromToken(String token, boolean isRefreshToken){
+    public String getEmailFromToken(String token, boolean isRefreshToken){
         SecretKey secret = (isRefreshToken) ? refreshSecretKey : accessSecretKey;
         return Jwts
                 .parserBuilder()

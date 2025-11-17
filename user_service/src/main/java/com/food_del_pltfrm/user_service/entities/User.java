@@ -27,7 +27,7 @@ public class User implements UserDetails {
     private Long id;
 
     @NotBlank(message = "Email не должен быть пустым!")
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     @Email(message = "Некорректный формат email!")
     private String email;
 

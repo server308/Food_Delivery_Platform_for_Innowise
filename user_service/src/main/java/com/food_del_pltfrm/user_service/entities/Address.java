@@ -30,7 +30,8 @@ public class Address {
 
     @Column(nullable = false)
     private String zip_code;
-    @Column(nullable = false, name = "sstate")
+
+    @Column(nullable = false)
     private String state;
 
     @Column(nullable = false)

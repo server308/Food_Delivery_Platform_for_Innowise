@@ -29,19 +29,19 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public JwtResponse signUp(SignUpRequest signUpRequest) {
         User user = userService.createUser(signUpRequest);
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getFullName(), user.getRoles());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getFullName());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
         return new JwtResponse(accessToken, refreshToken);
     }
 
     @Override
     public JwtResponse signIn(SignInRequest signInRequest) {
-        User user = userService.findByFullName(signInRequest.getFullName());
+        User user = userService.getUserForToken(signInRequest.getEmail());
         if (!userService.checkPassword(signInRequest.getPassword(), user.getPassword())){
             throw new RuntimeException("Access denied! Invalid password!");
         }
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getFullName(), user.getRoles());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getFullName());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
         return new JwtResponse(accessToken, refreshToken);
 
     }
@@ -69,13 +69,13 @@ public class JwtServiceImpl implements JwtService {
                 throw new RuntimeException("Invalid refresh token");
             }
 
-            String fullName = jwtTokenProvider.getFullNameFromToken(refreshToken, true);
-            log.info("Extracted fullName: {}", fullName);
+            String email = jwtTokenProvider.getEmailFromToken(refreshToken, true);
+            log.info("Extracted fullName: {}", email);
 
-            User user = userService.findByFullName(fullName);
-            log.info("Found user: {}", user.getUsername());
+            UserDTO user = userService.findByEmail(email);
+            log.info("Found user: {}", user.getEmail());
 
-            String newAccessToken = jwtTokenProvider.generateAccessToken(user.getFullName(), user.getRoles());
+            String newAccessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles());
             log.info("Generated new access token");
 
             return new AccessToken(newAccessToken);
