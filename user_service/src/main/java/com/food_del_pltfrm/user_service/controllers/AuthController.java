@@ -21,14 +21,14 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserService userService;
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@RequestBody SignInRequest authRequest) throws AuthException {
-        final JwtResponse token = jwtService.signIn(authRequest);
+    public ResponseEntity<JwtResponse> signIn(@RequestBody SignInRequest signInRequest) throws AuthException {
+        final JwtResponse token = jwtService.signIn(signInRequest);
         return ResponseEntity.ok(token);
     }
 
 
     @PostMapping("/register")
-    public ResponseEntity<JwtResponse> register(@RequestBody SignUpRequest signUpRequest) throws AuthException {
+    public ResponseEntity<JwtResponse> signUp(@RequestBody SignUpRequest signUpRequest) throws AuthException {
         JwtResponse jwtResponse = jwtService.signUp(signUpRequest);
         return ResponseEntity.ok(jwtResponse);
     }

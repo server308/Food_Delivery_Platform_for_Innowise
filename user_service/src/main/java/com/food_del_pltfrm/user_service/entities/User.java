@@ -27,7 +27,7 @@ public class User implements UserDetails {
     private Long id;
 
     @NotBlank(message = "Email не должен быть пустым!")
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     @Email(message = "Некорректный формат email!")
     private String email;
 
@@ -46,7 +46,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> addresses;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name="user_role",
             joinColumns=  @JoinColumn(name="user_id", referencedColumnName="id"),
             inverseJoinColumns= @JoinColumn(name="role_id", referencedColumnName="id") )

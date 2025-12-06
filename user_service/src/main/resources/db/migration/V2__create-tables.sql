@@ -54,3 +54,32 @@ ALTER TABLE user_role
         FOREIGN KEY (role_id) REFERENCES role(id)
             ON DELETE CASCADE;
 
+-- Вставка ролей
+INSERT INTO role (name) VALUES
+                            ('ROLE_ADMIN'),
+                            ('ROLE_USER')
+ON CONFLICT (name) DO NOTHING;
+
+-- Вставка администратора (пароль: 12345)
+INSERT INTO users (email, full_name, password_hash, created_at, updated_at)
+VALUES (
+           'serfvaler456@gmail.com',
+           'Administrator',
+           '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', -- закодированный пароль 12345
+           CURRENT_TIMESTAMP,
+           CURRENT_TIMESTAMP
+       )
+ON CONFLICT (email) DO NOTHING;
+
+-- Связывание администратора с ролью ADMIN
+INSERT INTO user_role (user_id, role_id)
+SELECT
+    u.id,
+    r.id
+FROM
+    users u,
+    role r
+WHERE
+    u.email = 'serfvaler456@gmail.com'
+  AND r.name = 'ROLE_ADMIN'
+ON CONFLICT (user_id, role_id) DO NOTHING;
