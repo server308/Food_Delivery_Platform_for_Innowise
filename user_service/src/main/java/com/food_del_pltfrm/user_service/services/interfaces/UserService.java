@@ -11,17 +11,28 @@ import java.util.List;
 
 public interface UserService {
     User createUser(SignUpRequest signUpRequest);
-    User findByFullName(String fullName);
-    UserDTO findByEmail(String email);
-    UserDTO getUserById(Long id);
-    boolean existsByUsername(String fullName);
-    boolean existsByEmail(String email);
-    boolean checkPassword(String password, String database_password);
-    void saveUser(User user);
-    UserDetails loadUserByUsername(String fullname);
-    List<UserDTO> getAllUsers();
-    User getUserForToken(String email);
-    UserDTO updateUser(Long userId, UserUpdateDTO userUpdateDto);
 
-    void deleteUser(Long id);
+    User findByFullName(String fullName);
+
+    UserDTO findByEmail(String email);
+
+    UserDTO getUserById(Long id);
+
+    boolean existsByUsername(String fullName);
+
+    boolean existsByEmail(String email);
+
+    boolean checkPassword(String password, String database_password);
+
+    void saveUser(User user);
+
+    UserDetails loadUserByUsername(String fullname);
+
+    List<UserDTO> getAllUsers();
+
+    User getUserForToken(String email);
+
+    UserDTO updateUser(String email, UserUpdateDTO userUpdateDto);
+
+    void deleteUser(String email);
 }

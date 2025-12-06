@@ -12,13 +12,16 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface AddressMapper {
-    @Mapping(target = "user_id", expression = "java(address.getUser() != null ? address.getUser().getId() : null)")
+    @Mapping(target = "city", source = "city")
     AddressDTO toAddressDto(Address address);
 
     // AddressDTO -> Address
+
+    @Mapping(target = "city", source = "city")
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "id",  expression = "java(address.getId() != null ? address.getId() : null)")
     Address toAddress(AddressDTO addressDTO);
+
+    List<AddressDTO> toAddressDtoList(List<Address> addresses);
 
 
 }

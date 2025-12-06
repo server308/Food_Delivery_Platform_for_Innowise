@@ -25,7 +25,7 @@ public class UserController {
      * GET /api/users/me - Get current user
      */
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<UserDTO> getPersonalUser(Authentication authentication) {
         UserDTO user = userService.findByEmail(authentication.getName());
         return ResponseEntity.ok(user);
     }
@@ -35,19 +35,17 @@ public class UserController {
      * PUT /api/users/me - Update current user
      */
     @PutMapping("/me")
-    public ResponseEntity<UserDTO> updateCurrentUser(Authentication authentication, @RequestBody UserUpdateDTO userUpdateDTO){
-        UserDTO currentUser = userService.findByEmail(authentication.getName());
-        UserDTO updatedUser = userService.updateUser(currentUser.getId(), userUpdateDTO);
+    public ResponseEntity<UserDTO> updatePersonalUser(Authentication authentication, @RequestBody UserUpdateDTO userUpdateDTO){
+        UserDTO updatedUser = userService.updateUser(authentication.getName(), userUpdateDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
     /**
      * DELETE /api/users/me - Delete current user
      */
-    @PutMapping("/me")
-    public ResponseEntity<Void> deleteUser(Authentication authentication) {
-        UserDTO currentUser = userService.findByEmail(authentication.getName());
-        userService.deleteUser(currentUser.getId());
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deletePersonalUser(Authentication authentication) {
+        userService.deleteUser(authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
@@ -82,7 +80,7 @@ public class UserController {
      * - Administrator: Can get any user
      * - User: Can only get their own profile
      */
-    @GetMapping("/email/{email}")
+    @GetMapping("/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
         UserDTO user = userService.findByEmail(email);
@@ -90,30 +88,30 @@ public class UserController {
     }
 
     /**
-     * PUT /api/users/{id} - Update User
+     * PUT /api/users/{email} - Update User
      * - Administrator: Can update any user
      * - User: Can only update their own profile
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<UserDTO> updateUser(
-            @PathVariable Long id,
+            @PathVariable String email,
             @RequestBody UserUpdateDTO userUpdateDTO) {
-        UserDTO updatedUser = userService.updateUser(id, userUpdateDTO);
+        UserDTO updatedUser = userService.updateUser(email, userUpdateDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
 
 
     /**
-     * DELETE /api/users/{id} - Delete User
+     * DELETE /api/users/{email} - Delete User
      * - Administrator: Can delete any user
      * - User: Can only delete their own account
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public ResponseEntity<Void> deleteUser(@PathVariable String email) {
+        userService.deleteUser(email);
         return ResponseEntity.noContent().build();
     }
 
