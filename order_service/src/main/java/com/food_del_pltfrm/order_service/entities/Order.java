@@ -25,7 +25,6 @@ public class Order {
     @Column(nullable = false)
     private String status;
 
-
     @Column(name = "orderDate", nullable = false)
     private LocalDateTime createdAt;
 

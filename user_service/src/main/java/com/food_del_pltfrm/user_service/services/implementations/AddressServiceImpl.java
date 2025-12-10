@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class AddressServiceImpl implements AddressService {
     private final UserRepository userRepository;
     private final AddressMapper addressMapper;
     private final AddressRepository addressRepository;
+    private final AmqpTemplate amqpTemplate;
 
     @Override
     @Transactional
@@ -82,5 +84,12 @@ public class AddressServiceImpl implements AddressService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         Address address = addressRepository.findByUserAndId(user, address_id).orElseThrow(()-> new RuntimeException("Address not found"));
         addressRepository.delete(address);
+    }
+
+
+
+    //Test method
+    public void sendMessage(){
+
     }
 }

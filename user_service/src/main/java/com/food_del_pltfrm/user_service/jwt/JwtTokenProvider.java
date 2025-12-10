@@ -35,12 +35,13 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateRefreshToken(String email){
+    public String generateRefreshToken(String user_id, String email){
         Map<String, Object> claims = new HashMap<>();
+        claims.put("email", email);
         claims.put("type", "refresh");
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(email) // Устанавливаем subject
+                .setSubject(user_id)
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия токена (30 дней)
                 .signWith(refreshSecretKey)
@@ -48,13 +49,13 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateAccessToken(String email, List<String> roles){
+    public String generateAccessToken(String user_id, String email, List<String> roles){
         Map<String, Object> claims = new HashMap<>();
-        //List<String> roles_string = roles.stream().map(role -> role.getName()).toList();
+        claims.put("email", email);
         claims.put("roles", roles);
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(email) // Устанавливаем subject
+                .setSubject(user_id)
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия access-токена (5 минут)
                 .signWith(accessSecretKey)

@@ -2,7 +2,10 @@ package com.food_del_pltfrm.user_service.services.implementations;
 
 import com.food_del_pltfrm.user_service.dtos.*;
 import com.food_del_pltfrm.user_service.entities.User;
+import com.food_del_pltfrm.user_service.entities.VerificationCode;
 import com.food_del_pltfrm.user_service.jwt.JwtTokenProvider;
+import com.food_del_pltfrm.user_service.rabbit.EventPublisher;
+import com.food_del_pltfrm.user_service.repositories.CodeRepository;
 import com.food_del_pltfrm.user_service.services.interfaces.JwtService;
 import com.food_del_pltfrm.user_service.services.interfaces.UserService;
 import io.jsonwebtoken.Claims;
@@ -15,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Random;
 
 @Service
 @Slf4j
@@ -25,13 +30,26 @@ import java.util.Date;
 public class JwtServiceImpl implements JwtService {
 
     private final UserService userService;
+    private final CodeRepository codeRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EventPublisher publisher;
     @Override
     public JwtResponse signUp(SignUpRequest signUpRequest) {
+        Random rand = new Random();
+        int randomNumber = 100000 + rand.nextInt(900000);
+        String randomString = String.valueOf(randomNumber);
         User user = userService.createUser(signUpRequest);
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
-        return new JwtResponse(accessToken, refreshToken);
+        VerificationCode verificationCode = new VerificationCode();
+        verificationCode.setUser(user);
+        verificationCode.setCode(String.valueOf(randomNumber));
+        verificationCode.setCreatedAt(LocalDateTime.now());
+        verificationCode.setExpiresAt(LocalDateTime.now().plusHours(3));
+        codeRepository.save(verificationCode);
+        publisher.publishUserCreated(verificationCode, user);
+
+        //String accessToken = jwtTokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
+        //String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId().toString(), user.getEmail());
+      //  return new JwtResponse(accessToken, refreshToken);
     }
 
     @Override
@@ -40,8 +58,8 @@ public class JwtServiceImpl implements JwtService {
         if (!userService.checkPassword(signInRequest.getPassword(), user.getPassword())){
             throw new RuntimeException("Access denied! Invalid password!");
         }
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId().toString(), user.getEmail());
         return new JwtResponse(accessToken, refreshToken);
 
     }
@@ -75,7 +93,7 @@ public class JwtServiceImpl implements JwtService {
             UserDTO user = userService.findByEmail(email);
             log.info("Found user: {}", user.getEmail());
 
-            String newAccessToken = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRoles());
+            String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getRoles());
             log.info("Generated new access token");
 
             return new AccessToken(newAccessToken);

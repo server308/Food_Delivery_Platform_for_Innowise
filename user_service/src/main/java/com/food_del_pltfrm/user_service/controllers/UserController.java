@@ -2,10 +2,8 @@ package com.food_del_pltfrm.user_service.controllers;
 
 import com.food_del_pltfrm.user_service.dtos.UserDTO;
 import com.food_del_pltfrm.user_service.dtos.UserUpdateDTO;
-import com.food_del_pltfrm.user_service.dtos.AddressDTO;
 import com.food_del_pltfrm.user_service.services.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -114,7 +112,6 @@ public class UserController {
         userService.deleteUser(email);
         return ResponseEntity.noContent().build();
     }
-
 
 
 }
