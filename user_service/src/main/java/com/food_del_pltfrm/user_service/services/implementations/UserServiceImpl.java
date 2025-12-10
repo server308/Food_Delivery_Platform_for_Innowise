@@ -6,9 +6,11 @@ import com.food_del_pltfrm.user_service.dtos.UserUpdateDTO;
 import com.food_del_pltfrm.user_service.entities.Role;
 import com.food_del_pltfrm.user_service.entities.User;
 import com.food_del_pltfrm.user_service.mappers.UserMapper;
+import com.food_del_pltfrm.user_service.rabbit.EventPublisher;
 import com.food_del_pltfrm.user_service.repositories.RoleRepository;
 import com.food_del_pltfrm.user_service.repositories.UserRepository;
 import com.food_del_pltfrm.user_service.services.interfaces.UserService;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final EventPublisher eventPublisher;
 
 
     @Override
@@ -72,7 +75,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new RuntimeException("Role not found"));
         List<Role> roles = List.of(role);
         user.setRoles(roles);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        UserDTO userDTO = userMapper.toUserDto(savedUser);
+
+
+        log.info("User registered and event published: {}", savedUser.getEmail());
+        return savedUser;
     }
 
     @Override
@@ -141,7 +150,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setUpdatedAt(LocalDateTime.now());
         User updatedUser = userRepository.save(user);
 
-        return userMapper.toUserDto(updatedUser);
+        UserDTO userDTO = userMapper.toUserDto(updatedUser);
+
+        log.info("✏️ User updated and event published: {}", email);
+
+        return userDTO;
     }
 
 
@@ -173,10 +186,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void deleteUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + email));
-
+        Long userId = user.getId();
         // Удаляем пользователя
         userRepository.delete(user);
 
-        log.info("User deleted: {} (ID: {})", user.getEmail(), user.getId());
+        log.info("🗑️ User deleted and event published: {} (ID: {})", user.getEmail(), userId);
     }
 }
