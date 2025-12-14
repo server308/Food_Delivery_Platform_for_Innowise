@@ -6,7 +6,6 @@ import com.food_del_pltfrm.restaurant_service.dtos.DishUpdateDTO;
 import com.food_del_pltfrm.restaurant_service.entities.Dish;
 import com.food_del_pltfrm.restaurant_service.entities.Restaurant;
 import com.food_del_pltfrm.restaurant_service.mappers.DishMapper;
-import com.food_del_pltfrm.restaurant_service.rabbit.EventPublisher;
 import com.food_del_pltfrm.restaurant_service.repositories.DishRepository;
 import com.food_del_pltfrm.restaurant_service.repositories.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ public class DishService {
     private final DishRepository dishRepository;
     private final RestaurantRepository restaurantRepository;
     private final DishMapper dishMapper;
-    private final EventPublisher eventPublisher;
 
 
     @Transactional
@@ -37,7 +35,6 @@ public class DishService {
         Dish savedDish = dishRepository.save(dish);
         DishDTO dishDTO = dishMapper.toDto(savedDish);
 
-        eventPublisher.publishMenuUpdated(restaurantId, dishDTO);
 
         return dishDTO;
     }
@@ -55,7 +52,6 @@ public class DishService {
         Dish savedDish = dishRepository.save(dish);
         DishDTO dishDTO = dishMapper.toDto(savedDish);
 
-        eventPublisher.publishMenuUpdated(dish.getRestaurant().getId(), dishDTO);
 
         return dishDTO;
     }
@@ -68,8 +64,6 @@ public class DishService {
 
         dishRepository.deleteById(dishId);
 
-        // Публикуем событие удаления из меню
-        eventPublisher.publishMenuUpdated(restaurantId, dishMapper.toDto(dish));
     }
     public DishDTO get(Long dishId) {
         return dishMapper.toDto(

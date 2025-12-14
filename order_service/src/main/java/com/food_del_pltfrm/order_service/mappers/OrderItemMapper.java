@@ -11,9 +11,15 @@ import org.mapstruct.Mapping;
 public interface OrderItemMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "order", ignore = true)
+    @Mapping(target = "dishId", source = "dishId")
+    @Mapping(target = "quantity", source = "quantity")
+    @Mapping(target = "price", source = "price")
     Order_item toEntity(CreateOrderItemDTO dto);
 
     @Mapping(target = "order", ignore = true)
+    @Mapping(target = "dishId", source = "dishId")
+    @Mapping(target = "quantity", source = "quantity")
+    @Mapping(target = "price", source = "price")
     Order_item toEntity(UpdateOrderItemDTO dto);
 
     OrderItemDTO toDTO(Order_item entity);

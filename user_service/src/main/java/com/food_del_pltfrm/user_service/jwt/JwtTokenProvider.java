@@ -37,11 +37,11 @@ public class JwtTokenProvider {
 
     public String generateRefreshToken(String user_id, String email){
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", email);
+        claims.put("user_id", user_id);
         claims.put("type", "refresh");
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(user_id)
+                .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия токена (30 дней)
                 .signWith(refreshSecretKey)
@@ -51,11 +51,11 @@ public class JwtTokenProvider {
 
     public String generateAccessToken(String user_id, String email, List<String> roles){
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", email);
+        claims.put("user_id", user_id);
         claims.put("roles", roles);
         return Jwts.builder()
                 .setClaims(claims) // Устанавливаем claims
-                .setSubject(user_id)
+                .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Устанавливаем время выпуска
                 .setExpiration(Date.from(LocalDateTime.now().plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant())) // Устанавливаем срок действия access-токена (5 минут)
                 .signWith(accessSecretKey)
