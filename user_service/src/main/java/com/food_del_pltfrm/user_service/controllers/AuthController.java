@@ -28,8 +28,14 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<JwtResponse> signUp(@RequestBody SignUpRequest signUpRequest) throws AuthException {
-        JwtResponse jwtResponse = jwtService.signUp(signUpRequest);
+    public ResponseEntity<String> signUp(@RequestBody SignUpRequest signUpRequest) throws AuthException {
+        String message = jwtService.signUp(signUpRequest);
+        return ResponseEntity.ok(message);
+    }
+
+    @PostMapping("/code")
+    public ResponseEntity<JwtResponse> checkCode(@RequestBody CodeDTO dto){
+        JwtResponse jwtResponse = jwtService.verifyCodeAndGetTokens(dto);
         return ResponseEntity.ok(jwtResponse);
     }
 

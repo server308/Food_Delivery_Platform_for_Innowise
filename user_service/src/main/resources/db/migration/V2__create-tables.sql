@@ -83,3 +83,42 @@ WHERE
     u.email = 'serfvaler456@gmail.com'
   AND r.name = 'ROLE_ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING;
+
+
+
+-- Создание таблицы verification codes
+CREATE TABLE codes (
+                       id BIGSERIAL PRIMARY KEY,
+                       code VARCHAR(6) NOT NULL,
+                       user_id BIGINT NOT NULL,
+                       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                       expires_at TIMESTAMP NOT NULL,
+
+    -- Ограничения
+                       CONSTRAINT fk_codes_user
+                           FOREIGN KEY (user_id)
+                               REFERENCES users(id)
+                               ON DELETE CASCADE,
+
+                       CONSTRAINT uk_codes_user
+                           UNIQUE (user_id), -- один активный код на пользователя
+
+                       CONSTRAINT chk_code_length
+                           CHECK (LENGTH(code) = 6),
+
+                       CONSTRAINT chk_expires_after_created
+                           CHECK (expires_at > created_at)
+);
+
+CREATE INDEX idx_codes_user_id ON codes(user_id);
+CREATE INDEX idx_codes_code ON codes(code);
+CREATE INDEX idx_codes_expires_at ON codes(expires_at);
+CREATE INDEX idx_codes_created_at ON codes(created_at);
+
+-- Комментарии к таблице и полям
+COMMENT ON TABLE codes IS 'Таблица для хранения кодов верификации email';
+COMMENT ON COLUMN codes.id IS 'Уникальный идентификатор кода';
+COMMENT ON COLUMN codes.code IS '6-значный код верификации';
+COMMENT ON COLUMN codes.user_id IS 'ID пользователя, которому принадлежит код';
+COMMENT ON COLUMN codes.created_at IS 'Время создания кода';
+COMMENT ON COLUMN codes.expires_at IS 'Время истечения срока действия кода';

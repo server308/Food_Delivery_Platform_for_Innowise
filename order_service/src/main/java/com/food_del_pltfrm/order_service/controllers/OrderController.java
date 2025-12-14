@@ -2,7 +2,9 @@ package com.food_del_pltfrm.order_service.controllers;
 
 
 import com.food_del_pltfrm.order_service.dtos.*;
+import com.food_del_pltfrm.order_service.jwt.JwtTokenProvider;
 import com.food_del_pltfrm.order_service.services.OrderService;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +20,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // ----------------- CREATE ORDER -----------------
     @PostMapping
@@ -25,8 +28,10 @@ public class OrderController {
             @RequestBody CreateOrderDTO dto,
             Authentication authentication
     ) {
-        Long userId = Long.parseLong(authentication.getName());
+        Claims claims = jwtTokenProvider.getAllClaimsFromToken(authentication.getCredentials().toString(), false);
 
+        Long userId = Long.parseLong(claims.get("user_id", String.class));
+        System.out.println(userId);
         OrderDTO created = orderService.createOrder(dto, userId);
 
         return ResponseEntity
@@ -55,6 +60,7 @@ public class OrderController {
 
     // ----------------- UPDATE ORDER -----------------
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> updateOrder(
             @PathVariable Long id,
             @RequestBody UpdateOrderDTO dto,
@@ -66,6 +72,7 @@ public class OrderController {
 
     // ----------------- DELETE ORDER -----------------
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> deleteOrder(
             @PathVariable Long id,
             Authentication authentication
@@ -77,7 +84,6 @@ public class OrderController {
 
     // ----------------- ADD ITEM TO ORDER -----------------
     @PostMapping("/{orderId}/items")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> addItem(
             @PathVariable Long orderId,
             @RequestBody CreateOrderItemDTO dto,
@@ -89,7 +95,6 @@ public class OrderController {
 
     // ----------------- UPDATE ITEM -----------------
     @PutMapping("/{orderId}/items/{itemId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> updateItem(
             @PathVariable Long orderId,
             @PathVariable Long itemId,
@@ -102,7 +107,6 @@ public class OrderController {
 
     // ----------------- DELETE ITEM -----------------
     @DeleteMapping("/{orderId}/items/{itemId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> deleteItem(
             @PathVariable Long orderId,
             @PathVariable Long itemId,

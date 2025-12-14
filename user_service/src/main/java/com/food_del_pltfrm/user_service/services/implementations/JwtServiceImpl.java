@@ -34,7 +34,9 @@ public class JwtServiceImpl implements JwtService {
     private final JwtTokenProvider jwtTokenProvider;
     private final EventPublisher publisher;
     @Override
-    public JwtResponse signUp(SignUpRequest signUpRequest) {
+    @Transactional
+    public String signUp(SignUpRequest signUpRequest) {
+
         Random rand = new Random();
         int randomNumber = 100000 + rand.nextInt(900000);
         String randomString = String.valueOf(randomNumber);
@@ -43,13 +45,14 @@ public class JwtServiceImpl implements JwtService {
         verificationCode.setUser(user);
         verificationCode.setCode(String.valueOf(randomNumber));
         verificationCode.setCreatedAt(LocalDateTime.now());
-        verificationCode.setExpiresAt(LocalDateTime.now().plusHours(3));
+        verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
         codeRepository.save(verificationCode);
         publisher.publishUserCreated(verificationCode, user);
 
-        //String accessToken = jwtTokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
-        //String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId().toString(), user.getEmail());
-      //  return new JwtResponse(accessToken, refreshToken);
+        return "The message was sent by email: "+ signUpRequest.getEmail();
+        // String accessToken = jwtTokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getRoles().stream().map(role -> role.getName()).toList());
+        // String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId().toString(), user.getEmail());
+      //   return new JwtResponse(accessToken, refreshToken);
     }
 
     @Override
@@ -102,5 +105,36 @@ public class JwtServiceImpl implements JwtService {
             log.error("Error in getNewAccessToken: {}", e.getMessage(), e);
             throw new RuntimeException("Token refresh failed: " + e.getMessage());
         }
+    }
+
+
+    @Override
+    @Transactional
+    public JwtResponse verifyCodeAndGetTokens(CodeDTO dto) {
+
+        VerificationCode verificationCode = codeRepository.findByCode(dto.getCode()).orElseThrow(() -> new RuntimeException("Code not found"));
+
+
+        if (verificationCode.getExpiresAt().isBefore(LocalDateTime.now())) {
+            codeRepository.delete(verificationCode);
+            throw new RuntimeException("Код истек. Запросите новый");
+        }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                verificationCode.getUser().getId().toString(),
+                verificationCode.getUser().getEmail(),
+                verificationCode.getUser().getRoles().stream().map(role -> role.getName()).toList()
+        );
+
+
+
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                verificationCode.getUser().getId().toString(),
+                verificationCode.getUser().getEmail()
+        );
+
+        codeRepository.delete(verificationCode);
+
+        return new JwtResponse(accessToken, refreshToken);
     }
 }

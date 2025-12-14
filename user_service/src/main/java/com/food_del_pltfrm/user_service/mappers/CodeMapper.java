@@ -18,8 +18,8 @@ public interface CodeMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", source = "code")
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "createdAt", expression = "java(java.util.time.LocalTime.now())")
-    @Mapping(target = "expiresAt", expression = "java(java.util.time.LocalTime.now().plusHours(3))")
+    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "expiresAt", expression = "java(java.time.LocalDateTime.now().plusHours(3))")
     VerificationCode toCode(CodeDTO codeDTO);
 
 }

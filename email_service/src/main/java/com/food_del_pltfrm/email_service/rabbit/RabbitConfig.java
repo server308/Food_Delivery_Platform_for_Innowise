@@ -1,4 +1,4 @@
-package com.food_del_pltfrm.user_service.rabbit;
+package com.food_del_pltfrm.email_service.rabbit;
 
 
 import org.springframework.amqp.core.Queue;

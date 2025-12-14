@@ -7,10 +7,10 @@ import com.food_del_pltfrm.order_service.entities.Payment;
 import com.food_del_pltfrm.order_service.mappers.OrderItemMapper;
 import com.food_del_pltfrm.order_service.mappers.OrderMapper;
 import com.food_del_pltfrm.order_service.mappers.PaymentMapper;
-import com.food_del_pltfrm.order_service.rabbit.EventPublisher;
 import com.food_del_pltfrm.order_service.repositories.OrderItemRepository;
 import com.food_del_pltfrm.order_service.repositories.OrderRepository;
 import com.food_del_pltfrm.order_service.repositories.PaymentRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,16 +29,17 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper itemMapper;
     private final PaymentMapper paymentMapper;
-    private final EventPublisher eventPublisher;
 
 
     // ------------------ CREATE ORDER ------------------
     @Transactional
     public OrderDTO createOrder(CreateOrderDTO dto, Long userId) {
-        dto.setUserId(userId);
 
-
+        Integer total = dto.getItems().stream().map(i -> i.getPrice()).reduce(0, Integer::sum);
         Order order = orderMapper.toEntity(dto);
+        order.setStatus("waiting");
+        order.setUserId(userId);
+        order.setTotalPrice(total);
         Order savedOrder = orderRepository.save(order);
 
         // Save items
@@ -55,12 +56,13 @@ public class OrderService {
                 .map(paymentRepository::save)
                 .toList();
 
+
         savedOrder.setOrder_items(items);
         savedOrder.setPayments(payments);
 
+
         OrderDTO orderDTO = orderMapper.toDTO(savedOrder);
 
-        eventPublisher.publishOrderCreated(orderDTO);
 
         return orderDTO;
     }
@@ -95,7 +97,6 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         OrderDTO orderDTO = orderMapper.toDTO(savedOrder);
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;    }
 
@@ -110,7 +111,6 @@ public class OrderService {
 
         orderRepository.delete(order);
 
-        eventPublisher.publishOrderCancelled(id, userId, "User deleted order");
 
     }
 
@@ -129,7 +129,6 @@ public class OrderService {
 
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }
@@ -156,7 +155,6 @@ public class OrderService {
 
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }
@@ -174,7 +172,6 @@ public class OrderService {
         itemRepository.delete(item);
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }
@@ -194,7 +191,6 @@ public class OrderService {
 
         OrderDTO orderDTO = orderMapper.toDTO(order);
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }
@@ -221,7 +217,6 @@ public class OrderService {
 
         OrderDTO orderDTO = orderMapper.toDTO(order);
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }
@@ -239,7 +234,6 @@ public class OrderService {
         paymentRepository.delete(payment);
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
-        eventPublisher.publishOrderUpdated(orderDTO);
 
         return orderDTO;
     }

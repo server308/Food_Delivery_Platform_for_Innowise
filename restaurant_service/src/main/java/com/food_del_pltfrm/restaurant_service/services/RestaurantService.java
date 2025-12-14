@@ -5,7 +5,6 @@ import com.food_del_pltfrm.restaurant_service.dtos.RestaurantDTO;
 import com.food_del_pltfrm.restaurant_service.dtos.RestaurantUpdateDTO;
 import com.food_del_pltfrm.restaurant_service.entities.Restaurant;
 import com.food_del_pltfrm.restaurant_service.mappers.RestaurantMapper;
-import com.food_del_pltfrm.restaurant_service.rabbit.EventPublisher;
 import com.food_del_pltfrm.restaurant_service.repositories.RestaurantRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,6 @@ public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantMapper restaurantMapper;
-    private final EventPublisher eventPublisher;
 
 
     @Transactional
@@ -28,8 +26,6 @@ public class RestaurantService {
         Restaurant entity = restaurantMapper.toEntity(dto);
         Restaurant savedRestaurant = restaurantRepository.save(entity);
         RestaurantDTO restaurantDTO = restaurantMapper.toDto(savedRestaurant);
-
-        eventPublisher.publishRestaurantCreated(restaurantDTO);
 
         return restaurantDTO;
     }
@@ -47,15 +43,12 @@ public class RestaurantService {
         Restaurant savedRestaurant = restaurantRepository.save(rest);
         RestaurantDTO restaurantDTO = restaurantMapper.toDto(savedRestaurant);
 
-        eventPublisher.publishRestaurantUpdated(restaurantDTO);
-
         return restaurantDTO;
     }
 
     public void delete(Long id) {
 
         restaurantRepository.deleteById(id);
-        eventPublisher.publishRestaurantDeleted(id);
 
     }
 
