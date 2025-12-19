@@ -7,6 +7,8 @@ import com.food_del_pltfrm.order_service.entities.Order_item;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface OrderItemMapper {
     @Mapping(target = "id", ignore = true)
@@ -23,4 +25,5 @@ public interface OrderItemMapper {
     Order_item toEntity(UpdateOrderItemDTO dto);
 
     OrderItemDTO toDTO(Order_item entity);
+    List<OrderItemDTO> ListItemsToDTO(List<Order_item> items);
 }

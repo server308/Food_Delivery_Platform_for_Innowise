@@ -10,13 +10,14 @@ import com.food_del_pltfrm.order_service.mappers.PaymentMapper;
 import com.food_del_pltfrm.order_service.repositories.OrderItemRepository;
 import com.food_del_pltfrm.order_service.repositories.OrderRepository;
 import com.food_del_pltfrm.order_service.repositories.PaymentRepository;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,34 +36,40 @@ public class OrderService {
     @Transactional
     public OrderDTO createOrder(CreateOrderDTO dto, Long userId) {
 
-        Integer total = dto.getItems().stream().map(i -> i.getPrice()).reduce(0, Integer::sum);
+        Integer total = dto.getItems().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        Integer sum_payments = dto.getPayments().stream().map(i -> i.getAmount()).reduce(0, Integer::sum);
+        if (total != sum_payments){
+            throw new RuntimeException("total and sum_payments not equal");
+        }
         Order order = orderMapper.toEntity(dto);
         order.setStatus("waiting");
         order.setUserId(userId);
-        order.setTotalPrice(total);
-        Order savedOrder = orderRepository.save(order);
+        order.setTotalPrice((int)(total+(total*0.2)));
+
+                Order savedOrder = orderRepository.save(order);
 
         // Save items
         List<Order_item> items = dto.getItems().stream()
                 .map(itemMapper::toEntity)
                 .peek(i -> i.setOrder(savedOrder))
                 .map(itemRepository::save)
-                .toList();
+                .collect(Collectors.toList());
+
 
         // Save payments
         List<Payment> payments = dto.getPayments().stream()
                 .map(paymentMapper::toEntity)
-                .peek(p -> p.setOrder(savedOrder))
+                .peek(p -> {
+                    p.setOrder(savedOrder);
+                })
                 .map(paymentRepository::save)
-                .toList();
+                .collect(Collectors.toList());
 
 
         savedOrder.setOrder_items(items);
         savedOrder.setPayments(payments);
 
-
         OrderDTO orderDTO = orderMapper.toDTO(savedOrder);
-
 
         return orderDTO;
     }
@@ -75,165 +82,271 @@ public class OrderService {
 
     // ------------------ GET ORDERS BY USER ------------------
     public List<OrderDTO> getOrdersByUser(Long userId) {
-        return orderRepository.findByUserId(userId).stream()
+        List<Order> orders = orderRepository.findAllByUserId(userId).orElseThrow(() -> new RuntimeException("Not found!"));
+        return orders.stream()
                 .map(orderMapper::toDTO)
                 .toList();
     }
 
     // ------------------ UPDATE ORDER ------------------
     @Transactional
-    public OrderDTO updateOrder(Long id, UpdateOrderDTO dto, Long userId) {
-        Order order = orderRepository.findById(id).orElseThrow();
-
-        // Validate user owner
-        if (!order.getUserId().equals(userId)) {
-            throw new RuntimeException("Forbidden: cannot edit another user's order");
+    public OrderDTO updateOrder(Long id, UpdateOrderDTO dto, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
+        Integer total = dto.getItems().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        Integer sum_payments = dto.getPayments().stream().map(i -> i.getAmount()).reduce(0, Integer::sum);
+        if (total != sum_payments){
+            throw new RuntimeException("total and sum_payments not equal");
         }
+        Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found!"));
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot update order!");
+        }
+        if (!order.getUserId().equals(userId) && !isAdmin) {
+            throw new RuntimeException("Forbidden");
+        }
+        if (!dto.getRestaurantId().equals(order.getRestaurantId())){
+            throw new RuntimeException("Cannot change restaurant after order creation");
+        }
+        if (!order.getOrder_items().isEmpty()) {
+            order.getOrder_items().clear();
+        }
+        if (!order.getPayments().isEmpty()){
+            order.getPayments().clear();
+        }
+        order.setTotalPrice((int)(total+(total*0.2)));
 
-        order.setStatus(dto.getStatus());
-        order.setRestaurantId(dto.getRestaurantId());
-        order.setTotalPrice(dto.getTotalPrice());
+        dto.getItems().stream()
+                .map(itemMapper::toEntity)
+                .forEach(item -> {
+                    item.setOrder(order);
+                    Order_item savedItem = itemRepository.save(item);
+                    order.getOrder_items().add(savedItem);
+                });
+
+        dto.getPayments().stream()
+                .map(paymentMapper::toEntity)
+                .forEach(payment -> {
+                    payment.setOrder(order);
+                    payment.setAmount((int)(total+(total*0.2)));
+                    Payment savedPayment = paymentRepository.save(payment);
+                    order.getPayments().add(savedPayment);
+                });
+
 
         Order savedOrder = orderRepository.save(order);
         OrderDTO orderDTO = orderMapper.toDTO(savedOrder);
 
 
-        return orderDTO;    }
+        return orderDTO;
+    }
 
     // ------------------ DELETE ORDER ------------------
     @Transactional
-    public void deleteOrder(Long id, Long userId) {
-        Order order = orderRepository.findById(id).orElseThrow();
+    public void deleteOrder(Long id, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
+        Order order = orderRepository.findById(id).orElseThrow(()-> new RuntimeException("Order not found!"));
 
-        if (!order.getUserId().equals(userId)) {
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot delete order!");
+        }
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
         }
-
         orderRepository.delete(order);
-
-
     }
 
     // ------------------ ADD ITEM ------------------
     @Transactional
-    public OrderDTO addItem(Long orderId, CreateOrderItemDTO dto, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
+    public OrderDTO addItem(Long orderId, CreateOrderItemDTO dto, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
 
-        if (!order.getUserId().equals(userId)) {
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
         }
-
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot add Item!");
+        }
         Order_item item = itemMapper.toEntity(dto);
         item.setOrder(order);
         itemRepository.save(item);
+        order.getOrder_items().add(item);
 
-        OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
+        Integer total = order.getOrder_items().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        order.setTotalPrice((int)(total+(total*0.2)));
+        Order saved_order = orderRepository.save(order);
+        Payment existingPayment = order.getPayments().get(0);
+        existingPayment.setAmount((int)(total+(total*0.2)));
+        paymentRepository.save(existingPayment);
 
+        OrderDTO orderDTO = orderMapper.toDTO(saved_order);
 
         return orderDTO;
     }
 
+
     // ------------------ UPDATE ITEM ------------------
     @Transactional
-    public OrderDTO updateItem(Long orderId, Long itemId, UpdateOrderItemDTO dto, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-        Order_item item = itemRepository.findById(itemId).orElseThrow();
+    public OrderDTO updateItem(Long orderId, Long itemId, UpdateOrderItemDTO dto, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
 
-        if (!order.getUserId().equals(userId)) {
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
         }
-
-        if (!item.getOrder().getId().equals(orderId)) {
-            throw new RuntimeException("Item does not belong to this order");
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot update Item!");
         }
-
+        Order_item item = itemRepository.findByOrderIdAndId(orderId, itemId).orElseThrow(()-> new RuntimeException("OrderItem not found!"));
         item.setDishId(dto.getDishId());
         item.setQuantity(dto.getQuantity());
         item.setPrice(dto.getPrice());
 
-        itemRepository.save(item);
+        Order_item saved_item = itemRepository.save(item);
+        order.getOrder_items().add(saved_item);
 
-        OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
+        Integer total = order.getOrder_items().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        order.setTotalPrice((int)(total+(total*0.2)));
+        Order saved_order = orderRepository.save(order);
+        Payment existingPayment = order.getPayments().get(0);
+        existingPayment.setAmount((int)(total+(total*0.2)));
+        paymentRepository.save(existingPayment);
+
+        OrderDTO orderDTO = orderMapper.toDTO(saved_order);
 
         return orderDTO;
     }
 
     // ------------------ DELETE ITEM ------------------
     @Transactional
-    public OrderDTO deleteItem(Long orderId, Long itemId, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-        Order_item item = itemRepository.findById(itemId).orElseThrow();
+    public OrderDTO deleteItem(Long orderId, Long itemId, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
 
-        if (!order.getUserId().equals(userId)) {
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
         }
 
-        itemRepository.delete(item);
-        OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot delete Item!");
+        }
 
+        Optional<Order_item> itemToRemove = order.getOrder_items().stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst();
 
+        if (itemToRemove.isEmpty()) {
+            throw new RuntimeException("Item not found in order!");
+        }
+        if (order.getOrder_items().stream().count() != 1){
+            itemRepository.delete(itemToRemove.get());
+            order.getOrder_items().remove(itemToRemove.get());
+        } else
+        {
+            throw new RuntimeException("Cannot delete item!");
+        }
+        Integer total = order.getOrder_items().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        order.setTotalPrice((int)(total+(total*0.2)));
+        Order saved_order = orderRepository.save(order);
+        Payment existingPayment = order.getPayments().get(0);
+        existingPayment.setAmount((int)(total+(total*0.2)));
+        paymentRepository.save(existingPayment);
+
+        OrderDTO orderDTO = orderMapper.toDTO(saved_order);
         return orderDTO;
     }
 
     // ------------------ ADD PAYMENT ------------------
     @Transactional
-    public OrderDTO addPayment(Long orderId, CreatePaymentDTO dto, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
+    public OrderDTO addPayment(Long orderId, CreatePaymentDTO dto, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
 
-        if (!order.getUserId().equals(userId)) {
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
+
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
+        }
+
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot add Payment");
         }
 
         Payment payment = paymentMapper.toEntity(dto);
         payment.setOrder(order);
+        order.getPayments().add(payment);
+        Integer total = order.getOrder_items().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        Integer amounts = order.getPayments().stream().map(p -> p.getAmount()).reduce(0, Integer::sum);
+        if (amounts != (int)(total+(total*0.2))){
+            throw new RuntimeException("TotalPrice doesn't equals amount");
+        }
         paymentRepository.save(payment);
-
         OrderDTO orderDTO = orderMapper.toDTO(order);
-
 
         return orderDTO;
     }
 
     // ------------------ UPDATE PAYMENT ------------------
     @Transactional
-    public OrderDTO updatePayment(Long orderId, Long paymentId, UpdatePaymentDTO dto, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow();
+    public OrderDTO updatePayment(Long orderId, Long paymentId, UpdatePaymentDTO dto, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
 
-        if (!order.getUserId().equals(userId)) {
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new RuntimeException("Payment not found!"));
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
+        }
+
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot add Payment");
         }
 
         if (!payment.getOrder().getId().equals(orderId)) {
             throw new RuntimeException("Payment does not belong to this order");
         }
 
+
         payment.setMethod(dto.getMethod());
         payment.setAmount(dto.getAmount());
         payment.setStatus(dto.getStatus());
+        payment.setOrder(order);
+        order.getPayments().add(payment);
+        Integer total = order.getOrder_items().stream().map(i -> i.getPrice()*i.getQuantity()).reduce(0, Integer::sum);
+        Integer amounts = order.getPayments().stream().map(p -> p.getAmount()).reduce(0, Integer::sum);
+        if (amounts != (int)(total+(total*0.2))){
+            throw new RuntimeException("TotalPrice doesn't equals amount");
+        }
 
         paymentRepository.save(payment);
 
         OrderDTO orderDTO = orderMapper.toDTO(order);
-
 
         return orderDTO;
     }
 
     // ------------------ DELETE PAYMENT ------------------
     @Transactional
-    public OrderDTO deletePayment(Long orderId, Long paymentId, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow();
+    public OrderDTO deletePayment(Long orderId, Long paymentId, Long userId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains("ROLE_ADMIN");
 
-        if (!order.getUserId().equals(userId)) {
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new RuntimeException("Order not found!"));
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(()-> new RuntimeException("Payment not found!"));
+
+        if (!order.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("Forbidden");
         }
 
+        if (order.getStatus().equals("accepted") && !isAdmin){
+            throw new RuntimeException("Cannot add Payment");
+        }
+        if (!payment.getOrder().getId().equals(orderId)) {
+            throw new RuntimeException("Payment does not belong to this order");
+        }
+        if (order.getPayments().size() == 1){
+            throw new RuntimeException("Payments can not be null in order");
+        }
         paymentRepository.delete(payment);
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
-
 
         return orderDTO;
     }

@@ -40,8 +40,11 @@ public class DishService {
     }
 
     @Transactional
-    public DishDTO update(Long dishId, DishUpdateDTO dto) {
-        Dish dish = dishRepository.findById(dishId)
+    public DishDTO update(Long restaurantId, Long dishId, DishUpdateDTO dto) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+
+        Dish dish = dishRepository.findDishByRestaurantAndId(restaurant, dishId)
                 .orElseThrow(() -> new RuntimeException("Dish not found"));
 
         dish.setName(dto.getName());
@@ -57,12 +60,13 @@ public class DishService {
     }
 
     @Transactional
-    public void delete(Long dishId) {
-        Dish dish = dishRepository.findById(dishId)
+    public void delete(Long restaurantId, Long dishId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        Dish dish = dishRepository.findDishByRestaurantAndId(restaurant, dishId)
                 .orElseThrow(() -> new RuntimeException("Dish not found"));
-        Long restaurantId = dish.getRestaurant().getId();
 
-        dishRepository.deleteById(dishId);
+        dishRepository.delete(dish);
 
     }
     public DishDTO get(Long dishId) {

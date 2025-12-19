@@ -5,6 +5,7 @@ import com.food_del_pltfrm.restaurant_service.dtos.RestaurantDTO;
 import com.food_del_pltfrm.restaurant_service.dtos.RestaurantUpdateDTO;
 import com.food_del_pltfrm.restaurant_service.services.RestaurantService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,29 +20,30 @@ public class RestaurantController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public RestaurantDTO create(@RequestBody RestaurantCreateDTO dto) {
-        return service.create(dto);
+    public ResponseEntity<RestaurantDTO> create(@RequestBody RestaurantCreateDTO dto) {
+        return ResponseEntity.ok(service.create(dto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public RestaurantDTO update(@PathVariable Long id, @RequestBody RestaurantUpdateDTO dto) {
-        return service.update(id, dto);
+    public ResponseEntity<RestaurantDTO> update(@PathVariable Long id, @RequestBody RestaurantUpdateDTO dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
-    public RestaurantDTO get(@PathVariable Long id) {
-        return service.get(id);
+    public ResponseEntity<RestaurantDTO> get(@PathVariable Long id) {
+        return ResponseEntity.ok(service.get(id));
     }
 
     @GetMapping
-    public List<RestaurantDTO> getAll() {
-        return service.getAll();
+    public ResponseEntity<List<RestaurantDTO>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
 }
