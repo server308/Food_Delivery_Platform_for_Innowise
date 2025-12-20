@@ -7,6 +7,7 @@ import com.food_del_pltfrm.order_service.entities.Payment;
 import com.food_del_pltfrm.order_service.mappers.OrderItemMapper;
 import com.food_del_pltfrm.order_service.mappers.OrderMapper;
 import com.food_del_pltfrm.order_service.mappers.PaymentMapper;
+import com.food_del_pltfrm.order_service.rabbit.EventListener;
 import com.food_del_pltfrm.order_service.repositories.OrderItemRepository;
 import com.food_del_pltfrm.order_service.repositories.OrderRepository;
 import com.food_del_pltfrm.order_service.repositories.PaymentRepository;
@@ -349,5 +350,11 @@ public class OrderService {
         OrderDTO orderDTO = orderMapper.toDTO(orderRepository.findById(orderId).orElseThrow());
 
         return orderDTO;
+    }
+
+
+    @Transactional
+    public void deleteOrdersByUserId(Long userId){
+        orderRepository.deleteAllByUserId(userId);
     }
 }

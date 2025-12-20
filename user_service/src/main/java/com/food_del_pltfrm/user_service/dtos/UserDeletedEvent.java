@@ -13,6 +13,4 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class UserDeletedEvent {
     private Long userId;
-    private String email;
-    private LocalDateTime deletedAt;
 }

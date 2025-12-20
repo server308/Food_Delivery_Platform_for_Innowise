@@ -32,4 +32,13 @@ public class EventPublisher {
 
     }
 
+    public void publishUserDeleted(UserDeletedEvent userDeletedEvent, User user){
+        userDeletedEvent = UserDeletedEvent.builder().userId(user.getId()).build();
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE_NAME,
+                RabbitConfig.USER_DELETED_ROUTING_KEY,
+                userDeletedEvent
+        );
+    }
+
 }

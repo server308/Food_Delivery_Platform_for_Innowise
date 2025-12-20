@@ -18,7 +18,6 @@ public class UserController {
 
     private final UserService userService;
 
-
     /**
      * GET /api/users/me - Get current user
      */
@@ -52,11 +51,9 @@ public class UserController {
 
 
     /**
-     * GET /api/users/{id} - Get user by ID
-     * - Administrator: Can get any user
-     * - User: Can only get their own profile
+     * GET /api/users/{id} - Get user by ID (ADMIN ONLY)
      */
-    @GetMapping("/{id}")
+    @GetMapping("/byId/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userService.getUserById(id);
@@ -64,7 +61,7 @@ public class UserController {
     }
 
     /**
-     * GET /api/users - Get all users (ADMIN ONLY)
+     * GET /api/byId/users - Get all users (ADMIN ONLY)
      */
     @GetMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -78,7 +75,7 @@ public class UserController {
      * - Administrator: Can get any user
      * - User: Can only get their own profile
      */
-    @GetMapping("/{email}")
+    @GetMapping("/email/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
         UserDTO user = userService.findByEmail(email);

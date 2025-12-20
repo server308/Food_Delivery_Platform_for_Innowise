@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
 @EnableRabbit
 public class RabbitConfig {
 
-    public static final String update_user_queue = "update.user.queue";
+    public static final String DELETE_USER_QUEUE = "delete.user.queue";
     public static final String EXCHANGE_NAME = "exchange";
-    public static final String ROUTING_KEY = "order.created";
+    public static final String ROUTING_KEY = "user.deleted";
 
     @Bean
     public TopicExchange exchange() {
@@ -26,13 +26,13 @@ public class RabbitConfig {
 
 
     @Bean
-    public Queue userUpdateQueue(){
-        return new Queue(update_user_queue, true);
+    public Queue userDeleteQueue(){
+        return new Queue(DELETE_USER_QUEUE, true);
     }
 
     @Bean
-    public Binding createdBinding(Queue createdQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(createdQueue).to(exchange).with(ROUTING_KEY);
+    public Binding createdBinding(Queue userDeleteQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(userDeleteQueue).to(exchange).with(ROUTING_KEY);
     }
 
 }

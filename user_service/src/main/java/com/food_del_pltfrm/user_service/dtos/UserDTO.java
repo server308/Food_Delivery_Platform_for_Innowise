@@ -18,6 +18,7 @@ public class UserDTO {
     private String fullName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean isPasswordChanged = false;
     private List<String> roles;
     private List<AddressDTO> addresses;
 }

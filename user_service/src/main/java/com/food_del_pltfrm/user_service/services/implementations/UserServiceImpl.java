@@ -133,27 +133,26 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
 
-        // Проверка email на уникальность (если email меняется)
         if (userUpdateDto.getEmail() != null && !userUpdateDto.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(userUpdateDto.getEmail())) {
                 throw new RuntimeException("Email " + userUpdateDto.getEmail() + " is already taken");
             }
         }
 
-        // Обновление базовых полей (доступно всем)
         updateBasicUserInfo(user, userUpdateDto);
 
-        if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isEmpty()) {
+        boolean isPasswordChanged = !userUpdateDto.getPassword().isEmpty() && !user.getPassword().equals(userUpdateDto.getPassword());
+
+        if (isPasswordChanged) {
             user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+            SecurityContextHolder.clearContext();
         }
 
         user.setUpdatedAt(LocalDateTime.now());
         User updatedUser = userRepository.save(user);
 
         UserDTO userDTO = userMapper.toUserDto(updatedUser);
-
-        log.info("✏️ User updated and event published: {}", email);
-
+        userDTO.setPasswordChanged(isPasswordChanged);
         return userDTO;
     }
 
@@ -187,7 +186,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + email));
         Long userId = user.getId();
-        // Удаляем пользователя
         userRepository.delete(user);
 
         log.info("🗑️ User deleted and event published: {} (ID: {})", user.getEmail(), userId);
