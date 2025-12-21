@@ -2,6 +2,7 @@ package com.food_del_pltfrm.user_service.services.implementations;
 
 import com.food_del_pltfrm.user_service.dtos.SignUpRequest;
 import com.food_del_pltfrm.user_service.dtos.UserDTO;
+import com.food_del_pltfrm.user_service.dtos.UserDeletedEvent;
 import com.food_del_pltfrm.user_service.dtos.UserUpdateDTO;
 import com.food_del_pltfrm.user_service.entities.Role;
 import com.food_del_pltfrm.user_service.entities.User;
@@ -187,7 +188,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + email));
         Long userId = user.getId();
         userRepository.delete(user);
-
+        UserDeletedEvent userDeletedEvent = new UserDeletedEvent();
+        userDeletedEvent.setUserId(userId);
+        eventPublisher.publishUserDeleted(userDeletedEvent);
         log.info("🗑️ User deleted and event published: {} (ID: {})", user.getEmail(), userId);
     }
 }

@@ -22,7 +22,7 @@ public class PaymentController {
 
 
     // ----------------- ADD PAYMENT -----------------
-    @PostMapping("/user/{userId}/{orderId}")
+    @PostMapping("/user/{userId}/order/{orderId}")
     public ResponseEntity<OrderDTO> addPaymentForUser(
             @PathVariable Long orderId,
             @RequestBody CreatePaymentDTO dto,
@@ -43,7 +43,7 @@ public class PaymentController {
     }
 
     // ----------------- UPDATE PAYMENT -----------------
-    @PutMapping("/user/{userId}/{orderId}/{paymentId}")
+    @PutMapping("/user/{userId}/order/{orderId}/payment/{paymentId}")
     public ResponseEntity<OrderDTO> updatePaymentForUser(
             @PathVariable Long orderId,
             @PathVariable Long paymentId,
@@ -52,7 +52,7 @@ public class PaymentController {
     ) {
         return ResponseEntity.ok(orderService.updatePayment(orderId, paymentId, dto, userId, authentication));
     }
-    @PutMapping("/{orderId}/{paymentId}")
+    @PutMapping("/order/{orderId}/payment/{paymentId}")
     public ResponseEntity<OrderDTO> updatePayment(
             @PathVariable Long orderId,
             @PathVariable Long paymentId,
@@ -64,7 +64,7 @@ public class PaymentController {
     }
 
     // ----------------- DELETE PAYMENT -----------------
-    @DeleteMapping("/user/{userId}/{orderId}/{paymentId}")
+    @DeleteMapping("/user/{userId}/order/{orderId}/payment/{paymentId}")
     public ResponseEntity<OrderDTO> deletePaymentForUser(
             @PathVariable Long orderId,
             @PathVariable Long paymentId,
@@ -73,7 +73,7 @@ public class PaymentController {
     ) {
         return ResponseEntity.ok(orderService.deletePayment(orderId, paymentId, userId, authentication));
     }
-    @DeleteMapping("/{orderId}/{paymentId}")
+    @DeleteMapping("/order/{orderId}/payment/{paymentId}")
     public ResponseEntity<OrderDTO> deletePayment(
             @PathVariable Long orderId,
             @PathVariable Long paymentId,

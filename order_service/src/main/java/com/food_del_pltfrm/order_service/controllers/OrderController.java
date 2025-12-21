@@ -36,19 +36,20 @@ public class OrderController {
                 .body(created);
     }
 
-    @PostMapping("/user/{userId}")
+    @PostMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> createOrderForUser(
             @RequestBody CreateOrderDTO dto, @PathVariable Long userId
     ) {
         OrderDTO created = orderService.createOrder(dto, userId);
         return ResponseEntity
-                .created(URI.create("/api/orders/" + created.getId()))
+                .created(URI.create("/api/orders/user/" + created.getId()))
                 .body(created);
     }
 
     // ----------------- GET ORDER BY ID -----------------
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }

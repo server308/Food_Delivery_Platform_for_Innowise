@@ -27,7 +27,7 @@ public class DishController {
         return ResponseEntity.ok(dishService.update(restaurantId, id, dto));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{restaurantId}/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long restaurantId, @PathVariable Long id) {
         dishService.delete(restaurantId, id);

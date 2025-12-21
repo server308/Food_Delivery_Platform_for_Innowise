@@ -49,7 +49,6 @@ public class UserController {
 
     /**ADMIN ENDPOINTS*/
 
-
     /**
      * GET /api/users/{id} - Get user by ID (ADMIN ONLY)
      */

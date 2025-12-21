@@ -47,6 +47,7 @@ CREATE TABLE public.payments (
                                  order_id BIGINT NOT NULL
 );
 
+
 -- Последовательность для payments.id
 CREATE SEQUENCE public.payments_id_seq
     START WITH 1
@@ -59,8 +60,8 @@ CREATE SEQUENCE public.payments_id_seq
 ALTER TABLE public.payments ALTER COLUMN id SET DEFAULT nextval('public.payments_id_seq');
 
 -- Ограничения внешних ключей
-ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES public.orders(id);
-
 ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES public.orders(id);
+    ADD CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.payments
+    ADD CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;

@@ -23,7 +23,7 @@ public class OrderItemController {
 
 
     // ----------------- ADD ITEM TO ORDER -----------------
-    @PostMapping("user/{userId}/{orderId}")
+    @PostMapping("/user/{userId}/order/{orderId}")
     public ResponseEntity<OrderDTO> addItemToOrderForUser(
             @PathVariable Long orderId,
             @RequestBody CreateOrderItemDTO dto,
@@ -32,7 +32,7 @@ public class OrderItemController {
         return ResponseEntity.ok(orderService.addItem(orderId, dto, userId, authentication));
     }
 
-    @PostMapping("/{orderId}")
+    @PostMapping("/order/{orderId}")
     public ResponseEntity<OrderDTO> addItemToOrder(
             @PathVariable Long orderId,
             @RequestBody CreateOrderItemDTO dto,
@@ -45,7 +45,7 @@ public class OrderItemController {
 
 
     // ----------------- UPDATE ITEM -----------------
-    @PutMapping("user/{userId}/{orderId}/{itemId}")
+    @PutMapping("/user/{userId}/order/{orderId}/item/{itemId}")
     public ResponseEntity<OrderDTO> updateItemToOrderForUser(
             @PathVariable Long userId,
             @PathVariable Long orderId,
@@ -55,7 +55,7 @@ public class OrderItemController {
         return ResponseEntity.ok(orderService.updateItem(orderId, itemId, dto, userId, authentication));
     }
 
-    @PutMapping("/{orderId}/{itemId}")
+    @PutMapping("/order/{orderId}/item/{itemId}")
     public ResponseEntity<OrderDTO> updateItemToOrder(
             @PathVariable Long orderId,
             @PathVariable Long itemId,
@@ -71,7 +71,7 @@ public class OrderItemController {
 
     // ----------------- DELETE ITEM -----------------
 
-    @DeleteMapping("user/{userId}/{orderId}/{itemId}")
+    @DeleteMapping("/user/{userId}/order/{orderId}/item/{itemId}")
     public ResponseEntity<OrderDTO> deleteItemToOrderForUser(
             @PathVariable Long userId,
             @PathVariable Long orderId,
@@ -80,7 +80,7 @@ public class OrderItemController {
     ) {
         return ResponseEntity.ok(orderService.deleteItem(orderId, itemId, userId, authentication));
     }
-    @DeleteMapping("/{orderId}/{itemId}")
+    @DeleteMapping("/order/{orderId}/item/{itemId}")
     public ResponseEntity<OrderDTO> deleteItemToOrder(
             @PathVariable Long orderId,
             @PathVariable Long itemId,
