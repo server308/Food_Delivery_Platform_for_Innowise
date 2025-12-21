@@ -7,6 +7,8 @@ import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
@@ -15,9 +17,9 @@ import org.springframework.stereotype.Component;
 @EnableRabbit
 public class RabbitConfig {
 
-    public static final String update_user_queue = "update.user.queue";
+    public static final String DELETE_USER_QUEUE = "delete.user.queue";
     public static final String EXCHANGE_NAME = "exchange";
-    public static final String ROUTING_KEY = "order.created";
+    public static final String USER_DELETED_ROUTING_KEY = "user.deleted";
 
     @Bean
     public TopicExchange exchange() {
@@ -26,13 +28,17 @@ public class RabbitConfig {
 
 
     @Bean
-    public Queue userUpdateQueue(){
-        return new Queue(update_user_queue, true);
+    public Queue userDeleteQueue(){
+        return new Queue(DELETE_USER_QUEUE, true);
     }
 
     @Bean
-    public Binding createdBinding(Queue createdQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(createdQueue).to(exchange).with(ROUTING_KEY);
+    public Binding userDeletedBinding(Queue userDeleteQueue, TopicExchange exchange){
+        return BindingBuilder.bind(userDeleteQueue).to(exchange).with(USER_DELETED_ROUTING_KEY);
     }
 
+    @Bean
+    public MessageConverter jsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
 }

@@ -8,6 +8,8 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -51,10 +53,11 @@ public class User implements UserDetails {
     private VerificationCode verificationCode;
 
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name="user_role",
             joinColumns=  @JoinColumn(name="user_id", referencedColumnName="id"),
             inverseJoinColumns= @JoinColumn(name="role_id", referencedColumnName="id") )
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Role> roles;
 
     @Override

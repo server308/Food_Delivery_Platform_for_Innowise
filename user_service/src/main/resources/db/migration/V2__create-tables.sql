@@ -38,7 +38,6 @@ CREATE INDEX idx_address_user_id ON address(user_id);
 CREATE INDEX idx_user_role_user_id ON user_role(user_id);
 CREATE INDEX idx_user_role_role_id ON user_role(role_id);
 
--- Добавление внешних ключей
 ALTER TABLE address
     ADD CONSTRAINT fk_address_user
         FOREIGN KEY (user_id) REFERENCES users(id)
@@ -52,7 +51,7 @@ ALTER TABLE user_role
 ALTER TABLE user_role
     ADD CONSTRAINT fk_user_role_role
         FOREIGN KEY (role_id) REFERENCES role(id)
-            ON DELETE CASCADE;
+            ON DELETE NO ACTION;
 
 -- Вставка ролей
 INSERT INTO role (name) VALUES
@@ -60,15 +59,19 @@ INSERT INTO role (name) VALUES
                             ('ROLE_USER')
 ON CONFLICT (name) DO NOTHING;
 
--- Вставка администратора (пароль: 12345)
+-- Вставка администратора и обычных пользователей (у всех пароль: 12345)
 INSERT INTO users (email, full_name, password_hash, created_at, updated_at)
 VALUES (
            'serfvaler456@gmail.com',
            'Administrator',
-           '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', -- закодированный пароль 12345
+           '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu',
            CURRENT_TIMESTAMP,
            CURRENT_TIMESTAMP
-       )
+       ),
+       ('ivanivanov4@gmail.com', 'Ivan Ivanov', '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       ('allapugach73@gmail.com', 'Alla Pugacheva', '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       ('centricanton9@example.com', 'Anton Centric', '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       ('nikolaibaskov888@example.com', 'Nikolai Baskov', '$2a$10$PXCtajnnyoiTCLjzmM/dX.a5E9y6q42p1xSRQXDLnifFDw.PaN7Fu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (email) DO NOTHING;
 
 -- Связывание администратора с ролью ADMIN
@@ -84,6 +87,19 @@ WHERE
   AND r.name = 'ROLE_ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
+
+INSERT INTO user_role (user_id, role_id)
+SELECT
+    u.id,
+    r.id
+FROM
+    users u,
+    role r
+WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE email = 'serfvaler456@gmail.com'
+                          AND r.name = 'ROLE_ADMIN'
+)
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 
 -- Создание таблицы verification codes

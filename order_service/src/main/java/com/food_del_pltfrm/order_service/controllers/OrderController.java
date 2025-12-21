@@ -23,130 +23,97 @@ public class OrderController {
     private final JwtTokenProvider jwtTokenProvider;
 
     // ----------------- CREATE ORDER -----------------
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<OrderDTO> createOrder(
             @RequestBody CreateOrderDTO dto,
             Authentication authentication
     ) {
         Claims claims = jwtTokenProvider.getAllClaimsFromToken(authentication.getCredentials().toString(), false);
-
         Long userId = Long.parseLong(claims.get("user_id", String.class));
-        System.out.println(userId);
         OrderDTO created = orderService.createOrder(dto, userId);
-
         return ResponseEntity
                 .created(URI.create("/api/orders/" + created.getId()))
                 .body(created);
     }
 
+    @PostMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<OrderDTO> createOrderForUser(
+            @RequestBody CreateOrderDTO dto, @PathVariable Long userId
+    ) {
+        OrderDTO created = orderService.createOrder(dto, userId);
+        return ResponseEntity
+                .created(URI.create("/api/orders/user/" + created.getId()))
+                .body(created);
+    }
+
     // ----------------- GET ORDER BY ID -----------------
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
-    @GetMapping("/by_user/{id}")
+    @GetMapping("/user/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<OrderDTO>> getOrdersByUser(Authentication authentication, @PathVariable Long id) {
         return ResponseEntity.ok(orderService.getOrdersByUser(id));
     }
 
     // ----------------- GET ALL USER ORDERS -----------------
-    @GetMapping
-    public ResponseEntity<List<OrderDTO>> getUserOrders(Authentication authentication) {
-        Long userId = Long.parseLong(authentication.getName());
+    @GetMapping("/me")
+    public ResponseEntity<List<OrderDTO>> getMyOrders(Authentication authentication) {
+        Claims claims = jwtTokenProvider.getAllClaimsFromToken(authentication.getCredentials().toString(), false);
+        Long userId = Long.parseLong(claims.get("user_id", String.class));
         return ResponseEntity.ok(orderService.getOrdersByUser(userId));
     }
 
     // ----------------- UPDATE ORDER -----------------
-    @PutMapping("/{id}")
+    @PutMapping("/user/{userId}/order/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<OrderDTO> updateOrderForUser(
+            @PathVariable Long id,
+            @RequestBody UpdateOrderDTO dto,
+            @PathVariable Long userId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(orderService.updateOrder(id, dto, userId, authentication));
+    }
+
+
+    @PutMapping("/{id}")
     public ResponseEntity<OrderDTO> updateOrder(
             @PathVariable Long id,
             @RequestBody UpdateOrderDTO dto,
             Authentication authentication
     ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.updateOrder(id, dto, userId));
+        Claims claims = jwtTokenProvider.getAllClaimsFromToken(authentication.getCredentials().toString(), false);
+        Long userId = Long.parseLong(claims.get("user_id", String.class));
+        return ResponseEntity.ok(orderService.updateOrder(id, dto, userId, authentication));
     }
 
     // ----------------- DELETE ORDER -----------------
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/user/{userId}/order/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteOrderForUser(
+            @PathVariable Long id,
+            @PathVariable Long userId, Authentication authentication
+    ) {
+        orderService.deleteOrder(id, userId, authentication);
+        return ResponseEntity.noContent().build();
+    }
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(
             @PathVariable Long id,
             Authentication authentication
     ) {
-        Long userId = Long.parseLong(authentication.getName());
-        orderService.deleteOrder(id, userId);
+        Claims claims = jwtTokenProvider.getAllClaimsFromToken(authentication.getCredentials().toString(), false);
+        Long userId = Long.parseLong(claims.get("user_id", String.class));
+        orderService.deleteOrder(id, userId, authentication);
         return ResponseEntity.noContent().build();
     }
 
-    // ----------------- ADD ITEM TO ORDER -----------------
-    @PostMapping("/{orderId}/items")
-    public ResponseEntity<OrderDTO> addItem(
-            @PathVariable Long orderId,
-            @RequestBody CreateOrderItemDTO dto,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.addItem(orderId, dto, userId));
-    }
 
-    // ----------------- UPDATE ITEM -----------------
-    @PutMapping("/{orderId}/items/{itemId}")
-    public ResponseEntity<OrderDTO> updateItem(
-            @PathVariable Long orderId,
-            @PathVariable Long itemId,
-            @RequestBody UpdateOrderItemDTO dto,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.updateItem(orderId, itemId, dto, userId));
-    }
 
-    // ----------------- DELETE ITEM -----------------
-    @DeleteMapping("/{orderId}/items/{itemId}")
-    public ResponseEntity<OrderDTO> deleteItem(
-            @PathVariable Long orderId,
-            @PathVariable Long itemId,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.deleteItem(orderId, itemId, userId));
-    }
 
-    // ----------------- ADD PAYMENT -----------------
-    @PostMapping("/{orderId}/payments")
-    public ResponseEntity<OrderDTO> addPayment(
-            @PathVariable Long orderId,
-            @RequestBody CreatePaymentDTO dto,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.addPayment(orderId, dto, userId));
-    }
-
-    // ----------------- UPDATE PAYMENT -----------------
-    @PutMapping("/{orderId}/payments/{paymentId}")
-    public ResponseEntity<OrderDTO> updatePayment(
-            @PathVariable Long orderId,
-            @PathVariable Long paymentId,
-            @RequestBody UpdatePaymentDTO dto,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.updatePayment(orderId, paymentId, dto, userId));
-    }
-
-    // ----------------- DELETE PAYMENT -----------------
-    @DeleteMapping("/{orderId}/payments/{paymentId}")
-    public ResponseEntity<OrderDTO> deletePayment(
-            @PathVariable Long orderId,
-            @PathVariable Long paymentId,
-            Authentication authentication
-    ) {
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(orderService.deletePayment(orderId, paymentId, userId));
-    }
 }

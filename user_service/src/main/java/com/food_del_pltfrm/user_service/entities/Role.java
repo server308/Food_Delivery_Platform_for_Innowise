@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.List;
@@ -31,6 +33,7 @@ public class Role implements GrantedAuthority {
             joinColumns = @JoinColumn(name = "role_id", referencedColumnName="id"),
             inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName="id")
     )
+    @OnDelete(action = OnDeleteAction.NO_ACTION)
     private List<User> users;
 
     @Override

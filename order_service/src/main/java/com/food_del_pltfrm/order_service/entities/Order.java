@@ -21,7 +21,6 @@ public class Order {
     @Column(name = "id")
     private Long id;
 
-
     @Column(nullable = false)
     private String status;
 
